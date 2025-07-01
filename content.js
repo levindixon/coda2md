@@ -1,1 +1,1 @@
-console.log('Coda Markdown Exporter content script loaded');
+// Content script placeholder - no active functionality needed currently

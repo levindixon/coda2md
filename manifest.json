@@ -22,5 +22,8 @@
       "matches": ["https://coda.io/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'"
+  }
 }
