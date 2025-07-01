@@ -64,9 +64,21 @@ async function handleExport(url) {
     }
 
     // Validate download URL for security
-    if (!downloadUrl.startsWith('https://coda.io/')) {
-      console.error('Invalid download URL origin');
-      return { success: false, error: 'Security error: Invalid download URL. Please try again.' };
+    // Coda export URLs come from AWS S3
+    try {
+      const urlObj = new URL(downloadUrl);
+      const validHosts = [
+        'coda-us-west-2-prod-workflow-objects.s3.us-west-2.amazonaws.com',
+        'coda.io'
+      ];
+      
+      if (urlObj.protocol !== 'https:' || !validHosts.some(host => urlObj.hostname === host)) {
+        console.error('Invalid download URL origin:', urlObj.hostname);
+        return { success: false, error: 'Security error: Invalid download URL. Please try again.' };
+      }
+    } catch (e) {
+      console.error('Invalid download URL format:', downloadUrl);
+      return { success: false, error: 'Security error: Invalid download URL format.' };
     }
 
     const pageName = await getPageName(docId, pageId, codaApiKey);

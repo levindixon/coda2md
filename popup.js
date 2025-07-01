@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           await chrome.downloads.download({
             url: response.downloadUrl,
             filename: response.filename || 'coda-export.md',
-            saveAs: true
+            saveAs: false
           });
           
           // Show success for a few seconds then clear
