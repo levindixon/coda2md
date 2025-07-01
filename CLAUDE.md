@@ -37,6 +37,11 @@ The extension follows Chrome's Manifest V3 architecture with three main componen
 - The export flow: URL parsing → find page ID → initiate export → poll status → download
 - Page IDs are found by recursively searching through the document's page tree
 - Export status is polled for up to 20 seconds before timing out
+- Includes retry logic for transient API failures (429 and 5xx errors)
+- All functions have JSDoc comments for better developer experience
+- Input validation for API keys and URLs
+- User-friendly error messages with actionable guidance
+- Content Security Policy (CSP) implemented for enhanced security
 
 ## API Integration
 
@@ -45,3 +50,23 @@ The extension integrates with Coda's v1 API endpoints:
 - `GET /docs/{docId}/pages/{pageId}` - Get page details
 - `POST /docs/{docId}/pages/{pageId}/export` - Initiate export
 - `GET /docs/{docId}/pages/{pageId}/export/{exportId}` - Check export status
+
+## Recent Improvements
+
+- Added comprehensive error handling with user-friendly messages
+- Implemented API key format validation
+- Added retry logic for transient failures
+- Enhanced security with Content Security Policy
+- Added loading states and visual feedback
+- Improved filename sanitization
+- Added JSDoc documentation to all functions
+- Created CONTRIBUTING.md for contributors
+- Enhanced README with troubleshooting and API limitations
+
+## Security Considerations
+
+- No console.log statements that could leak sensitive data
+- API key is masked in the UI (password input)
+- Download URLs are validated to ensure they're from coda.io
+- Filename sanitization prevents path traversal attacks
+- CSP prevents inline scripts and unsafe sources
