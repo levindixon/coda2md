@@ -1,0 +1,48 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Chrome Extension specific
+*.crx
+*.pem
+*.zip
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Node.js (in case future development includes npm)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Private keys and secrets
+.env
+.env.local
+secrets/
+
+# Build outputs (if any future build process)
+dist/
+build/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Local development files
+.local/
+*.local
