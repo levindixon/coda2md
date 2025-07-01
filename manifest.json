@@ -11,8 +11,18 @@
   "host_permissions": [
     "https://coda.io/*"
   ],
+  "icons": {
+    "16": "16.png",
+    "48": "48.png",
+    "128": "128.png"
+  },
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "16.png",
+      "48": "48.png",
+      "128": "128.png"
+    }
   },
   "background": {
     "service_worker": "background.js"
