@@ -182,6 +182,11 @@ coda2md/
 ├── popup.js          # Popup interaction logic
 ├── popup.css         # Popup styling
 ├── content.js        # Content script (minimal)
+├── CLAUDE.md         # Development guidance for AI assistants
+├── CONTRIBUTING.md   # Contribution guidelines
+├── 16.png            # Extension icon (16x16)
+├── 48.png            # Extension icon (48x48)
+├── 128.png           # Extension icon (128x128)
 └── README.md         # This file
 ```
 

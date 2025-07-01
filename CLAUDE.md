@@ -65,8 +65,8 @@ The extension integrates with Coda's v1 API endpoints:
 
 ## Security Considerations
 
-- No console.log statements that could leak sensitive data
 - API key is masked in the UI (password input)
 - Download URLs are validated to ensure they're from coda.io
 - Filename sanitization prevents path traversal attacks
 - CSP prevents inline scripts and unsafe sources
+- Console logging is used for debugging but doesn't expose sensitive data like API keys
