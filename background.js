@@ -1,3 +1,12 @@
+/**
+ * Chrome runtime message listener for handling export requests
+ * @param {Object} request - The message request object
+ * @param {string} request.action - The action to perform
+ * @param {string} request.url - The Coda page URL to export
+ * @param {Object} sender - Information about the sender
+ * @param {Function} sendResponse - Callback to send response
+ * @returns {boolean} True to indicate async response
+ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'exportPage') {
     handleExport(request.url).then(sendResponse);
@@ -5,38 +14,69 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
+/**
+ * Handles the complete export process for a Coda page
+ * @param {string} url - The Coda page URL to export
+ * @returns {Promise<Object>} Export result with success status and download info
+ */
 async function handleExport(url) {
   try {
+    // Validate URL format
+    if (!url || !url.includes('coda.io')) {
+      return { success: false, error: 'Please provide a valid Coda URL' };
+    }
+
     const urlMatch = url.match(/coda\.io\/d\/[^\/]+_d([^\/]+)\/[^\/]+_([^#?]+)/);
     if (!urlMatch) {
-      return { success: false, error: 'Invalid Coda URL format' };
+      return { success: false, error: 'Invalid Coda URL format. Please ensure you\'re on a Coda page.' };
     }
 
     const docId = urlMatch[1];
     const pageSlug = urlMatch[2];
 
-    const { codaApiKey } = await chrome.storage.local.get(['codaApiKey']);
+    // Retrieve API key from storage
+    let codaApiKey;
+    try {
+      const result = await chrome.storage.local.get(['codaApiKey']);
+      codaApiKey = result.codaApiKey;
+    } catch (error) {
+      console.error('Failed to retrieve API key:', error);
+      return { success: false, error: 'Failed to retrieve API key. Please try again.' };
+    }
+
     if (!codaApiKey) {
-      return { success: false, error: 'API key not configured' };
+      return { success: false, error: 'API key not configured. Please set your Coda API key in the extension settings.' };
     }
 
     const pageId = await findPageId(docId, pageSlug, codaApiKey);
     if (!pageId) {
-      return { success: false, error: 'Could not find page ID' };
+      return { success: false, error: 'Could not find the page. Please ensure the URL is correct and you have access to this page.' };
     }
 
     const exportId = await initiateExport(docId, pageId, codaApiKey);
     if (!exportId) {
-      return { success: false, error: 'Failed to initiate export' };
+      return { success: false, error: 'Failed to start the export process. Please try again.' };
     }
 
     const downloadUrl = await waitForExport(docId, pageId, exportId, codaApiKey);
     if (!downloadUrl) {
-      return { success: false, error: 'Export failed or timed out' };
+      return { success: false, error: 'Export process timed out. This might happen with very large pages. Please try again.' };
+    }
+
+    // Validate download URL for security
+    if (!downloadUrl.startsWith('https://coda.io/')) {
+      console.error('Invalid download URL origin');
+      return { success: false, error: 'Security error: Invalid download URL. Please try again.' };
     }
 
     const pageName = await getPageName(docId, pageId, codaApiKey);
-    const filename = `${pageName || 'coda-export'}.md`.replace(/[^a-z0-9-_.]/gi, '_');
+    // Sanitize filename more robustly
+    const sanitizedPageName = (pageName || 'coda-export')
+      .slice(0, 200) // Limit length to prevent filesystem issues
+      .replace(/[^a-z0-9-_.]/gi, '_')
+      .replace(/^\.+|\.+$/g, '') // Remove leading/trailing dots
+      .replace(/_{2,}/g, '_'); // Replace multiple underscores with single
+    const filename = `${sanitizedPageName || 'coda-export'}.md`;
 
     return { success: true, downloadUrl, filename };
   } catch (error) {
@@ -44,6 +84,14 @@ async function handleExport(url) {
   }
 }
 
+/**
+ * Finds a page ID by searching through the document's page tree
+ * @param {string} docId - The Coda document ID
+ * @param {string} pageSlug - The page slug from the URL
+ * @param {string} apiKey - Coda API authentication key
+ * @returns {Promise<string|null>} The page ID if found, null otherwise
+ * @throws {Error} If the API request fails
+ */
 async function findPageId(docId, pageSlug, apiKey) {
   const response = await fetch(`https://coda.io/apis/v1/docs/${docId}/pages`, {
     headers: {
@@ -52,11 +100,23 @@ async function findPageId(docId, pageSlug, apiKey) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch pages: ${response.status}`);
+    const errorMessage = response.status === 401 
+      ? 'Invalid API key. Please check your Coda API key.'
+      : response.status === 404 
+      ? 'Document not found. Please check the URL.'
+      : response.status === 403
+      ? 'Access denied. Please ensure you have permission to access this document.'
+      : `Failed to fetch pages (Error ${response.status})`;
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
   
+  /**
+   * Recursively searches through the page tree to find matching page
+   * @param {Array} pages - Array of page objects to search
+   * @returns {string|null} Page ID if found, null otherwise
+   */
   function searchPages(pages) {
     for (const page of pages) {
       if (page.browserLink && page.browserLink.includes(`_${pageSlug}`)) {
@@ -73,6 +133,13 @@ async function findPageId(docId, pageSlug, apiKey) {
   return searchPages(data.items);
 }
 
+/**
+ * Retrieves the name of a specific page
+ * @param {string} docId - The Coda document ID
+ * @param {string} pageId - The page ID
+ * @param {string} apiKey - Coda API authentication key
+ * @returns {Promise<string|null>} The page name or null if request fails
+ */
 async function getPageName(docId, pageId, apiKey) {
   const response = await fetch(`https://coda.io/apis/v1/docs/${docId}/pages/${pageId}`, {
     headers: {
@@ -81,6 +148,7 @@ async function getPageName(docId, pageId, apiKey) {
   });
 
   if (!response.ok) {
+    console.warn(`Failed to get page name: ${response.status}`);
     return null;
   }
 
@@ -88,6 +156,14 @@ async function getPageName(docId, pageId, apiKey) {
   return data.name;
 }
 
+/**
+ * Initiates the export process for a Coda page
+ * @param {string} docId - The Coda document ID
+ * @param {string} pageId - The page ID
+ * @param {string} apiKey - Coda API authentication key
+ * @returns {Promise<string>} The export request ID
+ * @throws {Error} If the export initiation fails
+ */
 async function initiateExport(docId, pageId, apiKey) {
   const response = await fetch(`https://coda.io/apis/v1/docs/${docId}/pages/${pageId}/export`, {
     method: 'POST',
@@ -99,13 +175,32 @@ async function initiateExport(docId, pageId, apiKey) {
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to initiate export: ${response.status}`);
+    const errorMessage = response.status === 401
+      ? 'Invalid API key. Please check your Coda API key.'
+      : response.status === 404
+      ? 'Page not found. The page may have been deleted or moved.'
+      : response.status === 403
+      ? 'Access denied. You don\'t have permission to export this page.'
+      : response.status === 429
+      ? 'Rate limit exceeded. Please wait a moment and try again.'
+      : `Failed to start export (Error ${response.status})`;
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();
   return data.id;
 }
 
+/**
+ * Polls the export status until completion or timeout
+ * @param {string} docId - The Coda document ID
+ * @param {string} pageId - The page ID
+ * @param {string} exportId - The export request ID
+ * @param {string} apiKey - Coda API authentication key
+ * @param {number} maxAttempts - Maximum polling attempts (default: 20 seconds)
+ * @returns {Promise<string>} The download URL when export is complete
+ * @throws {Error} If the export fails or times out
+ */
 async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) {
   for (let i = 0; i < maxAttempts; i++) {
     const response = await fetch(
@@ -118,7 +213,13 @@ async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) 
     );
 
     if (!response.ok) {
-      throw new Error(`Failed to check export status: ${response.status}`);
+      // Don't throw on transient errors, retry instead
+      if (response.status === 429 || response.status >= 500) {
+        console.warn(`Temporary error checking export status: ${response.status}, retrying...`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        continue;
+      }
+      throw new Error(`Failed to check export status (Error ${response.status})`);
     }
 
     const data = await response.json();
@@ -126,11 +227,12 @@ async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) 
     if (data.status === 'complete' && data.downloadLink) {
       return data.downloadLink;
     } else if (data.status === 'failed') {
-      throw new Error(data.error || 'Export failed');
+      throw new Error(data.error || 'Export failed. The page may be too large or contain unsupported content.');
     }
 
+    // Wait 1 second before next poll
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  throw new Error('Export timed out');
+  throw new Error('Export timed out after 20 seconds. The page may be too large. Please try exporting a smaller section.');
 }
