@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Coda Page to Markdown Exporter",
+  "version": "1.0",
+  "description": "Export Coda pages to markdown format",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "downloads"
+  ],
+  "host_permissions": [
+    "https://coda.io/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://coda.io/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
