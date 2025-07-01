@@ -45,9 +45,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   const exportButton = document.getElementById('export-page');
   const changeKeyButton = document.getElementById('change-key');
   const statusDiv = document.getElementById('status');
+  const cancelSetupButton = document.getElementById('cancel-setup');
+  const setupTitle = document.getElementById('setup-title');
+  const setupDescription = document.getElementById('setup-description');
 
   // Add keyboard event listener
   document.addEventListener('keypress', handleKeyPress);
+
+  /**
+   * Shows the setup form with appropriate text and buttons
+   * @param {boolean} isChangingKey - True if changing existing key, false for initial setup
+   */
+  function showSetupForm(isChangingKey = false) {
+    if (isChangingKey) {
+      setupTitle.textContent = 'Change API Key';
+      setupDescription.innerHTML =
+        'Enter a new API key to replace the existing one. <a href="https://coda.io/account" target="_blank">Get your API key from Coda</a>';
+      cancelSetupButton.style.display = 'block';
+    } else {
+      setupTitle.textContent = 'Setup API Key';
+      setupDescription.innerHTML =
+        'To export Coda pages, you need an API key. <a href="https://coda.io/account" target="_blank">Get your API key from Coda</a>';
+      cancelSetupButton.style.display = 'none';
+    }
+    setupView.style.display = 'block';
+    exportView.style.display = 'none';
+    apiKeyInput.value = '';
+    apiKeyInput.focus();
+    statusDiv.textContent = '';
+  }
 
   // Check if API key is already configured
   try {
@@ -55,6 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (result.codaApiKey) {
       setupView.style.display = 'none';
       exportView.style.display = 'block';
+    } else {
+      showSetupForm(false);
     }
   } catch (error) {
     console.error('Failed to check API key:', error);
@@ -66,7 +94,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    */
   saveKeyButton.addEventListener('click', async () => {
     const apiKey = apiKeyInput.value.trim();
-    
+
     // Validate API key
     if (!apiKey) {
       showStatus('Please enter your Coda API key', 'error');
@@ -106,13 +134,17 @@ document.addEventListener('DOMContentLoaded', async () => {
    * Handles changing the API key
    */
   changeKeyButton.addEventListener('click', async () => {
-    const confirmChange = confirm('Are you sure you want to change your API key?');
-    if (!confirmChange) return;
+    showSetupForm(true);
+  });
 
-    setupView.style.display = 'block';
-    exportView.style.display = 'none';
+  /**
+   * Handle cancel setup button
+   */
+  cancelSetupButton.addEventListener('click', () => {
+    setupView.style.display = 'none';
+    exportView.style.display = 'block';
+    apiKeyInput.value = '';
     statusDiv.textContent = '';
-    apiKeyInput.focus();
   });
 
   /**
@@ -124,19 +156,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     const originalText = exportButton.textContent;
     exportButton.textContent = 'Exporting...';
     showStatus('Initializing export...', 'loading');
-    
+
     // Add a small delay if this is a repeated export (helps with Coda API quirks)
     if (exportButton.dataset.lastExport) {
       const timeSinceLastExport = Date.now() - parseInt(exportButton.dataset.lastExport);
       if (timeSinceLastExport < 2000) {
-        await new Promise(resolve => setTimeout(resolve, 2000 - timeSinceLastExport));
+        await new Promise((resolve) => setTimeout(resolve, 2000 - timeSinceLastExport));
       }
     }
 
     try {
       // Get current tab
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      
+
       // Validate that we're on a Coda page
       if (!tab.url || !tab.url.includes('coda.io')) {
         showStatus('Please navigate to a Coda page to export', 'error');
@@ -149,23 +181,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Send export request to background script
       const response = await chrome.runtime.sendMessage({
         action: 'exportPage',
-        url: tab.url
+        url: tab.url,
       });
 
       if (response.success) {
         showStatus('Export successful! Starting download...', 'success');
-        
+
         // Record successful export time
         exportButton.dataset.lastExport = Date.now();
-        
+
         // Initiate download
         try {
           await chrome.downloads.download({
             url: response.downloadUrl,
             filename: response.filename || 'coda-export.md',
-            saveAs: false
+            saveAs: false,
           });
-          
+
           // Show success for a few seconds then clear
           setTimeout(() => {
             showStatus('Ready to export', 'success');
@@ -187,11 +219,4 @@ document.addEventListener('DOMContentLoaded', async () => {
       exportButton.textContent = originalText;
     }
   });
-
-  /**
-   * Focus on the API key input when setup view is shown
-   */
-  if (setupView.style.display !== 'none') {
-    apiKeyInput.focus();
-  }
 });
