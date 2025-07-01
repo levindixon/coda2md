@@ -82,17 +82,86 @@ The extension requires the following permissions:
 
 ## Troubleshooting
 
-### "Invalid Coda URL format" error
-Make sure you're on a Coda page (not the homepage or docs list)
+### Common Issues
 
-### "API key not configured" error
-Click the extension icon and enter your Coda API key
+#### "Invalid Coda URL format"
+- **Cause**: You're not on a Coda page or the URL format isn't recognized
+- **Solution**: Navigate to a specific Coda page (not the homepage, workspace, or docs list)
+- **Valid URL example**: `https://coda.io/d/Document-Name_dXXXXXXXXXX/Page-Name_suXXX`
 
-### Export times out
-Large pages may take longer to export. The extension will retry for up to 20 seconds.
+#### "API key not configured"
+- **Cause**: No API key has been saved in the extension
+- **Solution**: 
+  1. Click the extension icon
+  2. Enter your Coda API key
+  3. Click "Save API Key"
 
-### "Could not find page ID" error
-Ensure you have access to the page and are logged into Coda
+#### "Invalid API key"
+- **Cause**: The API key is incorrect or has been revoked
+- **Solution**: 
+  1. Go to [coda.io/account](https://coda.io/account) → API Settings
+  2. Generate a new API token
+  3. Update the key in the extension
+
+#### "Export timed out"
+- **Cause**: Large pages take longer to export than the 20-second timeout
+- **Solution**: 
+  1. Try exporting a smaller section of the page
+  2. Break large pages into smaller sub-pages
+  3. Wait a moment and try again
+
+#### "Could not find page"
+- **Cause**: The page may be private or you lack access
+- **Solution**: 
+  1. Ensure you're logged into Coda in your browser
+  2. Verify you have at least view access to the page
+  3. Check if the page still exists (hasn't been deleted)
+
+#### "Rate limit exceeded"
+- **Cause**: Too many API requests in a short time
+- **Solution**: Wait a few minutes before trying again
+
+#### Download doesn't start
+- **Cause**: Browser download settings or popup blockers
+- **Solution**: 
+  1. Check Chrome's download settings
+  2. Ensure popups are allowed for the extension
+  3. Check your Downloads folder - the file may have downloaded silently
+
+### Getting Help
+
+If you continue to experience issues:
+
+1. **Check the browser console**: Right-click the extension icon → "Inspect popup" → Console tab
+2. **Verify your setup**: Ensure you're using a recent version of Chrome
+3. **Report bugs**: [Open an issue](https://github.com/levindixon/coda2md/issues) with:
+   - Error message
+   - Chrome version
+   - Steps to reproduce
+   - Console error logs (if any)
+
+## Coda API Limitations
+
+### Rate Limits
+- **Default**: 10 requests per second
+- **Burst**: 20 requests allowed in short bursts
+- **Daily**: No published daily limit, but excessive use may trigger throttling
+
+### Export Limitations
+- **Page Size**: Very large pages (>10MB) may fail to export
+- **Export Format**: Only Markdown format is supported by this extension
+- **Concurrent Exports**: Only one export per page at a time
+- **Export Timeout**: Exports that take longer than 5 minutes may fail
+
+### Content Support
+- **Supported**: Text, tables, lists, headings, links, basic formatting
+- **Limited Support**: Complex formulas, some embedded content
+- **Not Exported**: Interactive elements, buttons, reactions, comments
+
+### Access Requirements
+- **Minimum Permission**: View access to the page
+- **API Key Scope**: Key must have read access to docs
+- **Authentication**: API key must be valid and not expired
 
 ## Development
 
