@@ -124,6 +124,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const originalText = exportButton.textContent;
     exportButton.textContent = 'Exporting...';
     showStatus('Initializing export...', 'loading');
+    
+    // Add a small delay if this is a repeated export (helps with Coda API quirks)
+    if (exportButton.dataset.lastExport) {
+      const timeSinceLastExport = Date.now() - parseInt(exportButton.dataset.lastExport);
+      if (timeSinceLastExport < 2000) {
+        await new Promise(resolve => setTimeout(resolve, 2000 - timeSinceLastExport));
+      }
+    }
 
     try {
       // Get current tab
@@ -146,6 +154,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (response.success) {
         showStatus('Export successful! Starting download...', 'success');
+        
+        // Record successful export time
+        exportButton.dataset.lastExport = Date.now();
         
         // Initiate download
         try {

@@ -1,3 +1,6 @@
+// Track ongoing exports to prevent duplicates
+const ongoingExports = new Map();
+
 /**
  * Chrome runtime message listener for handling export requests
  * @param {Object} request - The message request object
@@ -9,7 +12,26 @@
  */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'exportPage') {
-    handleExport(request.url).then(sendResponse);
+    // Check if an export is already in progress for this URL
+    if (ongoingExports.has(request.url)) {
+      console.log('Export already in progress for this URL, ignoring duplicate request');
+      sendResponse({ success: false, error: 'Export already in progress. Please wait for it to complete.' });
+      return false;
+    }
+    
+    // Mark this URL as having an ongoing export
+    ongoingExports.set(request.url, true);
+    
+    handleExport(request.url).then(response => {
+      // Clean up the ongoing export marker
+      ongoingExports.delete(request.url);
+      sendResponse(response);
+    }).catch(error => {
+      // Clean up on error too
+      ongoingExports.delete(request.url);
+      sendResponse({ success: false, error: error.message });
+    });
+    
     return true;
   }
 });
@@ -54,9 +76,13 @@ async function handleExport(url) {
     }
 
     const exportId = await initiateExport(docId, pageId, codaApiKey);
+    console.log(`Export initiated with ID: ${exportId} for page: ${pageId}`);
     if (!exportId) {
       return { success: false, error: 'Failed to start the export process. Please try again.' };
     }
+
+    // Wait a moment for Coda's API to register the export before checking status
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
     const downloadUrl = await waitForExport(docId, pageId, exportId, codaApiKey);
     if (!downloadUrl) {
@@ -215,6 +241,7 @@ async function initiateExport(docId, pageId, apiKey) {
  */
 async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) {
   for (let i = 0; i < maxAttempts; i++) {
+    console.log(`Polling export status attempt ${i + 1}/${maxAttempts} for exportId: ${exportId}`);
     const response = await fetch(
       `https://coda.io/apis/v1/docs/${docId}/pages/${pageId}/export/${exportId}`,
       {
@@ -231,12 +258,23 @@ async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) 
         await new Promise(resolve => setTimeout(resolve, 2000));
         continue;
       }
+      
+      // Log detailed error for 404s
+      if (response.status === 404) {
+        const errorBody = await response.text();
+        console.error(`Export ID not found (404). Export ID: ${exportId}, Response: ${errorBody}`);
+        
+        // This typically happens when the export ID doesn't exist or has expired
+        throw new Error('Export not found. The export may have expired or there was a timing issue with the API. Please try again.');
+      }
+      
       throw new Error(`Failed to check export status (Error ${response.status})`);
     }
 
     const data = await response.json();
     
     if (data.status === 'complete' && data.downloadLink) {
+      console.log(`Export completed successfully on attempt ${i + 1}`);
       return data.downloadLink;
     } else if (data.status === 'failed') {
       throw new Error(data.error || 'Export failed. The page may be too large or contain unsupported content.');

@@ -110,6 +110,13 @@ The extension requires the following permissions:
   2. Break large pages into smaller sub-pages
   3. Wait a moment and try again
 
+#### "Export request expired" 
+- **Cause**: Attempting to re-export the same page too quickly (Coda API limitation)
+- **Solution**: 
+  1. Wait at least 2-3 seconds between exports of the same page
+  2. The extension now automatically adds a delay to prevent this
+  3. If you still see this error, wait a moment and try again
+
 #### "Could not find page"
 - **Cause**: The page may be private or you lack access
 - **Solution**: 
@@ -152,6 +159,7 @@ If you continue to experience issues:
 - **Export Format**: Only Markdown format is supported by this extension
 - **Concurrent Exports**: Only one export per page at a time
 - **Export Timeout**: Exports that take longer than 5 minutes may fail
+- **Export ID Expiration**: Export IDs expire immediately after use. When re-exporting the same page, wait at least 2 seconds between exports to avoid API errors
 
 ### Content Support
 - **Supported**: Text, tables, lists, headings, links, basic formatting
