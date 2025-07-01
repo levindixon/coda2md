@@ -26,7 +26,7 @@ function showStatus(message, type = 'loading') {
 function handleKeyPress(event) {
   if (event.key === 'Enter') {
     const setupView = document.getElementById('setup-view');
-    if (setupView.style.display !== 'none') {
+    if (!setupView.classList.includes('hidden')) {
       document.getElementById('save-key').click();
     } else {
       document.getElementById('export-page').click();
@@ -60,16 +60,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isChangingKey) {
       setupTitle.textContent = 'Change API Key';
       setupDescription.innerHTML =
-        'Enter a new API key to replace the existing one. <a href="https://coda.io/account" target="_blank">Get your API key from Coda</a>';
-      cancelSetupButton.style.display = 'block';
+        'Enter a new Coda API key to replace the existing one.<br/>Visit <a href="https://coda.io/account" target="_blank">https://coda.io/account</a> to generate a new key.';
+      cancelSetupButton.classList.remove('hidden');
     } else {
       setupTitle.textContent = 'Setup API Key';
       setupDescription.innerHTML =
-        'To export Coda pages, you need an API key. <a href="https://coda.io/account" target="_blank">Get your API key from Coda</a>';
-      cancelSetupButton.style.display = 'none';
+        'To export Coda pages, you\'ll need a Coda API key.<br/>Visit <a href="https://coda.io/account" target="_blank">https://coda.io/account</a> to generate a new key.';
+      cancelSetupButton.classList.add('hidden');
     }
-    setupView.style.display = 'block';
-    exportView.style.display = 'none';
+    setupView.classList.remove('hidden');
+    exportView.classList.add('hidden');
     apiKeyInput.value = '';
     apiKeyInput.focus();
     statusDiv.textContent = '';
@@ -79,8 +79,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const result = await chrome.storage.local.get(['codaApiKey']);
     if (result.codaApiKey) {
-      setupView.style.display = 'none';
-      exportView.style.display = 'block';
+      setupView.classList.add('hidden');
+      exportView.classList.remove('hidden');
     } else {
       showSetupForm(false);
     }
@@ -115,8 +115,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       await chrome.storage.local.set({ codaApiKey: apiKey });
-      setupView.style.display = 'none';
-      exportView.style.display = 'block';
+      setupView.classList.add('hidden');
+      exportView.classList.remove('hidden');
       apiKeyInput.value = '';
       showStatus('API key saved successfully!', 'success');
       // Clear success message after 2 seconds
@@ -141,8 +141,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    * Handle cancel setup button
    */
   cancelSetupButton.addEventListener('click', () => {
-    setupView.style.display = 'none';
-    exportView.style.display = 'block';
+    setupView.classList.add('hidden');
+    exportView.classList.remove('hidden');
     apiKeyInput.value = '';
     statusDiv.textContent = '';
   });

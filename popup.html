@@ -1,28 +1,33 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <link rel="stylesheet" href="popup.css">
-</head>
-<body>
-  <div class="container">
-    <h2>Coda Markdown Exporter</h2>
-    
-    <div id="setup-view" class="view">
-      <h3 id="setup-title">Setup API Key</h3>
-      <p id="setup-description" class="help-text">To export Coda pages, you need an API key. <a href="https://coda.io/account/apiSettings" target="_blank">Get your API key from Coda</a></p>
-      <label for="api-key">Coda API Key:</label>
-      <input type="password" id="api-key" placeholder="Enter your Coda API key">
-      <button id="save-key" class="primary-button">Save API Key</button>
-      <button id="cancel-setup" class="secondary-button" style="display: none;">Cancel</button>
+  <head>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h2>Coda Markdown Exporter</h2>
+
+      <div id="setup-view" class="view">
+        <h3 id="setup-title">Setup API Key</h3>
+        <p id="setup-description" class="help-text">
+          To export Coda pages, you need an API key.
+          <a href="https://coda.io/account/apiSettings" target="_blank"
+            >Get your API key from Coda</a
+          >
+        </p>
+        <label for="api-key">Coda API Key:</label>
+        <input type="password" id="api-key" placeholder="Enter your Coda API key" />
+        <button id="save-key" class="primary-button">Save API Key</button>
+        <button id="cancel-setup" class="secondary-button hidden">Cancel</button>
+      </div>
+
+      <div id="export-view" class="view hidden">
+        <button id="export-page" class="primary-button">Export Current Page</button>
+        <button id="change-key" class="secondary-button">Change API Key</button>
+        <div id="status" class="status"></div>
+      </div>
     </div>
-    
-    <div id="export-view" class="view" style="display: none;">
-      <button id="export-page" class="primary-button">Export Current Page</button>
-      <button id="change-key" class="secondary-button">Change API Key</button>
-      <div id="status" class="status"></div>
-    </div>
-  </div>
-  
-  <script src="popup.js"></script>
-</body>
+
+    <script src="popup.js"></script>
+  </body>
 </html>

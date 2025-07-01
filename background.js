@@ -18,10 +18,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ success: false, error: 'Export already in progress. Please wait for it to complete.' });
       return false;
     }
-    
+
     // Mark this URL as having an ongoing export
     ongoingExports.set(request.url, true);
-    
+
     handleExport(request.url).then(response => {
       // Clean up the ongoing export marker
       ongoingExports.delete(request.url);
@@ -31,7 +31,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       ongoingExports.delete(request.url);
       sendResponse({ success: false, error: error.message });
     });
-    
+
     return true;
   }
 });
@@ -97,7 +97,7 @@ async function handleExport(url) {
         'coda-us-west-2-prod-workflow-objects.s3.us-west-2.amazonaws.com',
         'coda.io'
       ];
-      
+
       if (urlObj.protocol !== 'https:' || !validHosts.some(host => urlObj.hostname === host)) {
         console.error('Invalid download URL origin:', urlObj.hostname);
         return { success: false, error: 'Security error: Invalid download URL. Please try again.' };
@@ -138,9 +138,9 @@ async function findPageId(docId, pageSlug, apiKey) {
   });
 
   if (!response.ok) {
-    const errorMessage = response.status === 401 
+    const errorMessage = response.status === 401
       ? 'Invalid API key. Please check your Coda API key.'
-      : response.status === 404 
+      : response.status === 404
       ? 'Document not found. Please check the URL.'
       : response.status === 403
       ? 'Access denied. Please ensure you have permission to access this document.'
@@ -149,7 +149,7 @@ async function findPageId(docId, pageSlug, apiKey) {
   }
 
   const data = await response.json();
-  
+
   /**
    * Recursively searches through the page tree to find matching page
    * @param {Array} pages - Array of page objects to search
@@ -258,21 +258,21 @@ async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) 
         await new Promise(resolve => setTimeout(resolve, 2000));
         continue;
       }
-      
+
       // Log detailed error for 404s
       if (response.status === 404) {
         const errorBody = await response.text();
         console.error(`Export ID not found (404). Export ID: ${exportId}, Response: ${errorBody}`);
-        
-        // This typically happens when the export ID doesn't exist or has expired
-        throw new Error('Export not found. The export may have expired or there was a timing issue with the API. Please try again.');
+
+        // This typically happens when the export ID doesn't exist yet
+        continue;
       }
-      
+
       throw new Error(`Failed to check export status (Error ${response.status})`);
     }
 
     const data = await response.json();
-    
+
     if (data.status === 'complete' && data.downloadLink) {
       console.log(`Export completed successfully on attempt ${i + 1}`);
       return data.downloadLink;
@@ -284,5 +284,5 @@ async function waitForExport(docId, pageId, exportId, apiKey, maxAttempts = 20) 
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 
-  throw new Error('Export timed out after 20 seconds. The page may be too large. Please try exporting a smaller section.');
+  throw new Error('Export timed out after 20 seconds.');
 }
