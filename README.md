@@ -2,6 +2,8 @@
 
 A Chrome extension that enables seamless export of Coda pages to Markdown format with a single click.
 
+https://github.com/user-attachments/assets/ae35597a-084b-4eda-811b-478efe0cba68
+
 ## Features
 
 - 🚀 One-click export of any Coda page to Markdown
