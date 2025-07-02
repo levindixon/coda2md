@@ -28,10 +28,6 @@ https://github.com/user-attachments/assets/ae35597a-084b-4eda-811b-478efe0cba68
 
 4. Click "Load unpacked" and select the extension directory
 
-### From Chrome Web Store
-
-*Coming soon!*
-
 ## Setup
 
 1. **Get your Coda API token:**
@@ -212,7 +208,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with the [Coda API](https://coda.io/developers/apis/v1)
 - Uses Chrome Extension Manifest V3
-- Extension developed by [Claude](https://claude.ai) (Anthropic's AI assistant)
+- Extension developed by [Claude](https://claude.ai)
 
 ## Support
 
