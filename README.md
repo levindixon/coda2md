@@ -44,7 +44,7 @@ https://github.com/user-attachments/assets/53aa6702-fffe-4026-ab9b-9cc998953e4d
 ## Usage
 
 1. Navigate to any Coda page you want to export
-2. Click the Coda2MD extension icon
+2. Click the coda2md extension icon
 3. Click "Export Current Page"
 4. The page will be downloaded as a `.md` file to your Downloads folder
 
