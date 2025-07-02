@@ -1,4 +1,4 @@
-# Coda2MD - Export Coda Pages to Markdown
+# coda2md - Export Coda Pages to Markdown
 
 A Chrome extension that enables seamless export of Coda pages to Markdown format with a single click.
 
