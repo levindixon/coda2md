@@ -131,25 +131,6 @@ async function handleExport(url) {
  * @throws {Error} If the API request fails
  */
 async function findPageId(docId, pageSlug, apiKey) {
-  const response = await fetch(`https://coda.io/apis/v1/docs/${docId}/pages`, {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`
-    }
-  });
-
-  if (!response.ok) {
-    const errorMessage = response.status === 401
-      ? 'Invalid API key. Please check your Coda API key.'
-      : response.status === 404
-      ? 'Document not found. Please check the URL.'
-      : response.status === 403
-      ? 'Access denied. Please ensure you have permission to access this document.'
-      : `Failed to fetch pages (Error ${response.status})`;
-    throw new Error(errorMessage);
-  }
-
-  const data = await response.json();
-
   /**
    * Recursively searches through the page tree to find matching page
    * @param {Array} pages - Array of page objects to search
@@ -168,7 +149,56 @@ async function findPageId(docId, pageSlug, apiKey) {
     return null;
   }
 
-  return searchPages(data.items);
+  let nextPageToken = undefined;
+  let pageCount = 0;
+  const maxPages = 50; // Prevent infinite loops
+
+  do {
+    pageCount++;
+    console.log(`Fetching page batch ${pageCount}${nextPageToken ? ` with token: ${nextPageToken}` : ''}`);
+    
+    const url = new URL(`https://coda.io/apis/v1/docs/${docId}/pages`);
+    if (nextPageToken) {
+      url.searchParams.append('pageToken', nextPageToken);
+    }
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    if (!response.ok) {
+      const errorMessage = response.status === 401
+        ? 'Invalid API key. Please check your Coda API key.'
+        : response.status === 404
+        ? 'Document not found. Please check the URL.'
+        : response.status === 403
+        ? 'Access denied. Please ensure you have permission to access this document.'
+        : `Failed to fetch pages (Error ${response.status})`;
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    
+    // Search current batch of pages
+    const pageId = searchPages(data.items);
+    if (pageId) {
+      console.log(`Found page ID ${pageId} in batch ${pageCount}`);
+      return pageId;
+    }
+
+    // Check for next page token
+    nextPageToken = data.nextPageToken;
+    
+    if (pageCount >= maxPages) {
+      console.warn(`Reached maximum page limit (${maxPages}) while searching for page`);
+      break;
+    }
+  } while (nextPageToken);
+
+  console.log(`Page not found after searching ${pageCount} batch(es)`);
+  return null;
 }
 
 /**
