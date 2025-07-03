@@ -48,7 +48,7 @@ async function handleExport(url) {
       return { success: false, error: 'Please provide a valid Coda URL' };
     }
 
-    const urlMatch = url.match(/coda\.io\/d\/[^\/]+_d([^\/]+)\/[^\/]+_([^#?]+)/);
+    const urlMatch = url.match(/coda\.io\/d\/[^\/]+_d([^\/]+)\/[^\/]+_(s[^#?\/_]+)/);
     if (!urlMatch) {
       return { success: false, error: 'Invalid Coda URL format. Please ensure you\'re on a Coda page.' };
     }
@@ -138,9 +138,24 @@ async function findPageId(docId, pageSlug, apiKey) {
    */
   function searchPages(pages) {
     for (const page of pages) {
-      if (page.browserLink && page.browserLink.includes(`_${pageSlug}`)) {
-        return page.id;
+      console.log(`Checking page: ${page.name}, browserLink: ${page.browserLink}, looking for: _${pageSlug}`);
+      
+      // Check multiple possible formats
+      if (page.browserLink) {
+        // Try exact match with underscore prefix
+        if (page.browserLink.includes(`_${pageSlug}`)) {
+          console.log(`Found match with _${pageSlug} pattern`);
+          return page.id;
+        }
+        
+        // Try matching the end of the URL (handle both /pageSlug and /_pageSlug formats)
+        const browserLinkEnd = page.browserLink.split('/').pop();
+        if (browserLinkEnd === pageSlug || browserLinkEnd === `_${pageSlug}` || browserLinkEnd === `s${pageSlug}`) {
+          console.log(`Found match with URL end pattern: ${browserLinkEnd}`);
+          return page.id;
+        }
       }
+      
       if (page.children) {
         const childResult = searchPages(page.children);
         if (childResult) return childResult;
